@@ -3,6 +3,7 @@ package com.example.project_frontend
 
 
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,13 +37,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.project_frontend.schema.User
+import com.example.project_frontend.storeViewmodel.StoreViewModel
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUp(navController: NavController)
+fun SignUp(navController: NavController , viewModel: StoreViewModel)
 {
+
+
+    val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -58,11 +67,15 @@ fun SignUp(navController: NavController)
                         )
                     }} ,
                 title = { Text("Sign up" ,
-                    modifier = Modifier.fillMaxWidth().padding(start = 110.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 110.dp),
                     textAlign= TextAlign.Start ,
                     fontWeight = FontWeight.Bold) },
-                modifier = Modifier.statusBarsPadding().height(50.dp)
-                // pushes content below status bar
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .height(50.dp)
+
             )
         }
     ) {
@@ -78,8 +91,18 @@ fun SignUp(navController: NavController)
             val password = remember { mutableStateOf("") }
 
 
+
+
+            val signUpChecking = remember { mutableStateOf(false) }
+
+
+
+
+
             Text("Name",
-                Modifier.fillMaxWidth().padding(start = 10.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp),
                 fontWeight = FontWeight.Bold)
             TextField(
                 value = name.value ,
@@ -87,7 +110,9 @@ fun SignUp(navController: NavController)
                     name.value = it
                 } ,
                 label = { Text("Enter your name")},
-                modifier = Modifier.fillMaxWidth().padding(10.dp) ,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp) ,
                 shape = RoundedCornerShape(10.dp),
                 placeholder = {Text("Name")},
                 colors = TextFieldDefaults.colors(
@@ -102,7 +127,9 @@ fun SignUp(navController: NavController)
 
 
             Text("Email",
-                Modifier.fillMaxWidth().padding(start = 10.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp),
                 fontWeight = FontWeight.Bold)
             TextField(
                 value = email.value ,
@@ -110,7 +137,9 @@ fun SignUp(navController: NavController)
                     email.value = it
                 } ,
                 label = { Text("Enter your email")},
-                modifier = Modifier.fillMaxWidth().padding(10.dp) ,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp) ,
                 shape = RoundedCornerShape(10.dp),
                 placeholder = {Text("Email")},
                 colors = TextFieldDefaults.colors(
@@ -129,7 +158,9 @@ fun SignUp(navController: NavController)
 
 
             Text("Password" ,
-                Modifier.fillMaxWidth().padding(start = 10.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp),
                 fontWeight = FontWeight.Bold)
             TextField(
                 value = password.value ,
@@ -137,7 +168,9 @@ fun SignUp(navController: NavController)
                     password.value = it
                 } ,
                 label = { Text("Enter your Password")},
-                modifier = Modifier.fillMaxWidth().padding(10.dp) ,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp) ,
                 shape = RoundedCornerShape(10.dp),
                 placeholder = {Text("Password")},
                 colors = TextFieldDefaults.colors(
@@ -158,16 +191,39 @@ fun SignUp(navController: NavController)
 
 
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(4.dp))
 
 
             Button(onClick = {
-                navController.navigate("Login")
-                {
-                    launchSingleTop = true
+
+                scope.launch {
+                viewModel.SearchUserByEmail(email.value)
+
+                val UserByEmail = viewModel.userByemail.value
+                if (UserByEmail == null) {
+
+                    val newUser =
+                        User(name = name.value, email = email.value, password = password.value)
+                    scope.launch {
+                        viewModel.AddUser(newUser)
+                    }
+
+                    navController.navigate("Login")
+                    {
+                        launchSingleTop = true
+                    }
+                } else if (UserByEmail != null && UserByEmail.email == email.value && UserByEmail.password == password.value) {
+                    signUpChecking.value = true
+
                 }
-            } ,
-                modifier = Modifier.fillMaxWidth().padding(10.dp),
+            }
+
+
+
+               } ,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00C8E3), // this is the button background
@@ -181,21 +237,41 @@ fun SignUp(navController: NavController)
             }
 
 
+            if(signUpChecking.value)
+            {
+                Text("User already exists , go back to login",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp ,
+                    modifier = Modifier.clickable(
+                        onClick = {
+                            navController.navigate("Login")
+                            {
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+
+
+                )
+            }
 
 
 
 
 
 
-
-
-
-
+            Button(onClick = {
+                navController.navigate("UsersShowing")
+                {
+                    launchSingleTop = true
+                }
+            }) {
+                Text("click if you want to see all the users in the database")
+            }
 
 
         }
-
-
 
     }
 }
