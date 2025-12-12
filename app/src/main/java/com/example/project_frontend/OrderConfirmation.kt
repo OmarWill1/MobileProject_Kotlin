@@ -151,7 +151,7 @@ fun OrderConfirmation(navController: NavController) {
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ButtomApp()
+            ButtomApp(navController)
         }
     }
 

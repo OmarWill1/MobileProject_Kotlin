@@ -1,22 +1,17 @@
 package com.example.project_frontend
 
-import android.graphics.Paint
-import androidx.compose.foundation.Image
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -24,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -34,30 +28,29 @@ import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import kotlin.reflect.typeOf
+import coil.compose.AsyncImage
+import com.example.project_frontend.data.Product
+import com.example.project_frontend.data.ProductViewModel
 
 
 
@@ -75,17 +68,20 @@ import kotlin.reflect.typeOf
 
 
 @Composable
-fun ButtomApp()
+fun ButtomApp(navController: NavController)
 {
 
 
 
 
 
-    val titles = listOf("Home", "Shop", "Cart" , "Profile")
-    val icons = listOf(Icons.Default.Home, Icons.Default.Store, Icons.Default.ShoppingCart,Icons.Default.Person)
+    val titles = listOf("Home", "Shop", "Cart" , "Favorite")
+    val icons = listOf(Icons.Default.Home, Icons.Default.Store, Icons.Default.ShoppingCart,Icons.Default.Favorite)
+    val routes = listOf("Page1" , "Shop" , "Cart" , "Favorite")
 
     var selected by remember { mutableStateOf("Shop") }
+
+
 
     Row(
         modifier = Modifier
@@ -97,7 +93,14 @@ fun ButtomApp()
         for (i in titles.indices) {
             Column(verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = { selected = titles[i] }) {
+                IconButton(onClick = {
+                    selected = titles[i]
+                    navController.navigate(routes[i])
+                    {
+                        launchSingleTop = true
+                    }
+
+                }) {
                     Icon(
                         imageVector = icons[i],
                         contentDescription = titles[i],
@@ -122,18 +125,31 @@ data class ClothingItem( val name: String,
 
 
 @Composable
-fun Shop(navController: NavController) {
+fun Shop(navController: NavController , productViewModel: ProductViewModel) {
     // Sample data
+
+    val scope = rememberCoroutineScope()
     val typeClothes = listOf("All", "Men", "Women", "Kids")
-    val clothesDetails = listOf(
-        ClothingItem("Base Layer", "80$", R.drawable.pic1),
-        ClothingItem("Insulated Jacket", "250$", R.drawable.page2),
-        ClothingItem("Snow Pants", "180$", R.drawable.page3),
-        ClothingItem("Gloves", "50$", R.drawable.page4),
-        ClothingItem("Futurefleece Hoodie", "150$", R.drawable.page5)
-    )
+
+
+
+
+    // Get the State object directly
+    val products  by productViewModel.products
+
+// No .collectAsState() is needed!
+
+    LaunchedEffect(Unit) {
+            productViewModel.loadProducts()
+    }
+
+
+
+
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+
 
         // 1️⃣ Scrollable content
         LazyColumn(
@@ -160,21 +176,23 @@ fun Shop(navController: NavController) {
             }
 
             // Product cards
-            items(clothesDetails) { item ->
+
+            items(products) { product ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp).padding(8.dp)
                         .let{
                                 mod ->
-                            if (item.name == "Futurefleece Hoodie"){
+
                                 mod.clickable{
-                                    navController.navigate("ProductDetail"){
+                                    navController.navigate("ProductDetail/${product.id}"){
+                                        popUpTo("route_to_clear_up_to") {
+                                            inclusive = true
+                                        }
                                         launchSingleTop = true
                                     }
-                                }
-                                }
-                            else mod
+                                 }
                             }
 
                         ,
@@ -184,22 +202,26 @@ fun Shop(navController: NavController) {
                 ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxSize().padding(4.dp),
+                            .fillMaxSize()
+                            .padding(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         // Text Column
-                        Column( Modifier.padding(start =8.dp ) ,
+                        Column( Modifier.padding(start =8.dp )
+                            .weight(1f),
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = item.name,
+                                text = "${product.title ?: ""}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
-                                color = Color.Black
+                                color = Color.Black,
+                                maxLines = 1 ,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = item.price,
+                                text = "${product.price ?:0}",
                                 color = Color.Gray,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
@@ -207,22 +229,24 @@ fun Shop(navController: NavController) {
                         }
 
                         // Image
-                        Image(
-                            painter = painterResource(id = item.imageRes),
-                            contentDescription = item.name,
+                       AsyncImage(
+                            model = product.image ?: "",
+                            contentDescription = product.description ?: "",
                             modifier = Modifier
                                 .width(140.dp)
-                                .height(90.dp).padding(end = 8.dp).clip
+                                .height(90.dp)
+                                .padding(end = 8.dp)
+                                .clip
                                     (RoundedCornerShape(12.dp)),
                             contentScale =  ContentScale.Crop
 
                         )
                     }
-                } // your composable card
+                }
             }
         }
 
-        //  Fixed Header
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -246,7 +270,7 @@ fun Shop(navController: NavController) {
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ButtomApp()
+            ButtomApp(navController)
         }
     }
 }
