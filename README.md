@@ -3,7 +3,7 @@
 Ce dépôt contient le code source d'une application e-commerce Android moderne, développée en Kotlin. L'application a été conçue en suivant les meilleures pratiques de développement Android, en utilisant les composants Jetpack et une architecture MVVM robuste.
 
 ##  Captures d'écran
-![Uploading kotlin project .png…]()
+![Kotlin Project](images/kotlin_project.png)
 
 
 
